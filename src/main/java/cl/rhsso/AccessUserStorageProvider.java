@@ -152,7 +152,7 @@ public class AccessUserStorageProvider implements UserStorageProvider,
 
 				@Override
 				public void setUsername(String username) {
-					logger.info("dentro de setUsername .. ");
+					logger.info("dentro de setUsername getUserByUsername .. ");
 				}
 			};
 
