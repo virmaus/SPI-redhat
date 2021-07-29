@@ -120,7 +120,7 @@ public class AccessUserStorageProvider implements UserStorageProvider,
 		StorageId storageId = new StorageId(id);
 		String username = storageId.getExternalId();
 
-		return getUserByUsername("regresa username" + username, realm);
+		return getUserByUsername(username, realm);
 	}
 	
 	@Override
@@ -137,7 +137,7 @@ public class AccessUserStorageProvider implements UserStorageProvider,
 	public UserModel getUserByUsername(String username, RealmModel realm) {
 		logger.info("2 - va al metodo getUserByUsername dentro username: " + username+"\n");
 
-		UserModel adapter = loadedUsers.get(username);
+		UserModel adapter = loadedUsers.get(username);  // Usuarios cargados
 		if (adapter == null) {
 			logger.info("3 - Linea 142 Metodo getUserByUsername -- cuando adapter es null...");
 
@@ -146,8 +146,8 @@ public class AccessUserStorageProvider implements UserStorageProvider,
 				@Override
 				public String getUsername() {
 					logger.info("4 -  Linea 149 dentro de getUsername, dentro del if... " + username);
-					return null;
-					//return username;
+					
+					return username;
 				}
 
 				@Override
@@ -160,19 +160,19 @@ public class AccessUserStorageProvider implements UserStorageProvider,
 			//query.setParameter("username", username);
 
 			//List<UserInfoVO> result = query.getResultList();
-			UserFederationDAO dao = new UserFederationDAOImpl();
+			UserFederationDAO dao = new UserFederationDAOImpl(properties);
 			UserInfoVO userinfo = dao.getUserByUsername(username);
 			
 			System.out.println("dentro de getuserbyusername 164, el usuario que se obtiene del dao: " + username);
-			adapter.setUsername(userinfo.getUserName()); // TODO esto esta malo no?
+			//adapter.setUsername(userinfo.getUserName()); // TODO esto esta malo no?
 			adapter.setEmail(userinfo.getEmail());
 			adapter.setFirstName(userinfo.getFirstName());
 			adapter.setLastName(userinfo.getLastName());
-			//loadedUsers.put(username, adapter);  // TODO que hace esta linea
+			loadedUsers.put(username, adapter);  // TODO que hace esta linea ? 
 			
 			adapter.setCreatedTimestamp(System.currentTimeMillis());
 			adapter.setEnabled(true);
-			adapter.setSingleAttribute("ATRIBUTO", userinfo.getAtributo()); // TODO mcontreras revisar este atributo con jorwin
+			adapter.setSingleAttribute("ATRIBUTO", userinfo.getAtributo()); // TODO mcontreras revisar este atributo con nicolas - jorwin
 			
 			logger.info("Linea 172 -- captura de lastname: " + adapter.getLastName());
 			
@@ -192,7 +192,7 @@ public class AccessUserStorageProvider implements UserStorageProvider,
 			public void setUsername(String username) {
 				String pw = (String) properties.remove(username);
 				if (pw != null) {
-					logger.info("Password no existe");
+					logger.info("Password no existe ..");
 				}
 			}
 		};
@@ -209,6 +209,7 @@ public class AccessUserStorageProvider implements UserStorageProvider,
 		//return getUserByUsername("regresa mail" + email, realm); // este return esta mal
 	}
 
+	
 	@Override
 	public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
 		logger.info("dentro isConfiguredFor");
@@ -234,23 +235,9 @@ public class AccessUserStorageProvider implements UserStorageProvider,
 		String usuario = user.getUsername();
 		logger.info("Linea 231 --se obtiene username en isValid AccessUser");
 		
-		UserFederationDAO dao = new UserFederationDAOImpl();
+		UserFederationDAO dao = new UserFederationDAOImpl(properties);
 		return dao.isValid(usuario, cred.getValue());
 				
-		//TypedQuery<UserInfoVO> query = em.createNamedQuery("isValid", UserInfoVO.class);
-		//query.setParameter("username", usuario);
-		//query.setParameter("password", cred.getValue()); // Validacion de contraseña
-		
-		//List<UserInfoVO> result = query.getResultList();
-//		if (result.size() > 0) {
-//			return true;
-//		} else {
-//			return false;
-//		}
-		
-		// return true; //Para efecto de pruebas
-		// return CypherBCryptPass.checkPassword(cred.getValue(),
-		// result.get(0).getPassword());
 	}
 	
 	@Override
@@ -260,24 +247,11 @@ public class AccessUserStorageProvider implements UserStorageProvider,
 		UserCredentialModel cred = (UserCredentialModel) input;
 		//logger.info("updateCredential - password: " + cred.getValue()); //Verificando password		
 
-//		TypedQuery<UserInfoVO> queryUp = em.createNamedQuery("updateCredential", UserInfoVO.class);
-//		logger.info("setear parametros...."); 
-//		queryUp.setParameter("atributo", user.getAttribute("atributo"));
-//		queryUp.setParameter("email", user.getEmail());
-//		queryUp.setParameter("firstName", user.getFirstName());
-//		queryUp.setParameter("lastname", user.getLastName());
-//		queryUp.setParameter("password", cred.getValue());
-//		queryUp.setParameter("username", user.getUsername());
-//		queryUp.setParameter("id", Long.parseLong("2"));
-//		logger.info("ejecutar update...."); 
-//		
-//		queryUp.executeUpdate(); // Error javax.ejb.EJBTransactionRolledbackException: Update/delete queries cannot be typed
-
 		//Funcional:
 		/*TO-DO: El atributo nuevo no esta entrando desde base de datos.*/
 		/*TO-DO: Si el valor es nulo, dejar nullo y que no aparezca null en la base de datos*/
 		
-		UserFederationDAO dao = new UserFederationDAOImpl();
+		UserFederationDAO dao = new UserFederationDAOImpl(properties);
 		boolean resultado = dao.updateCredential(user.getUsername(),user.getEmail(),user.getFirstName(),user.getLastName(),cred.getValue(), user.getId());
 		
 //		Query query = em.createQuery("update UserInfoVO set "
@@ -344,7 +318,7 @@ public class AccessUserStorageProvider implements UserStorageProvider,
 		List<UserModel> users = new LinkedList<>();
 
 		
-		UserFederationDAO dao = new UserFederationDAOImpl();
+		UserFederationDAO dao = new UserFederationDAOImpl(properties);
 				
 					
 		//TypedQuery<UserInfoVO> query = em.createNamedQuery("searchForUser", UserInfoVO.class);
@@ -376,7 +350,7 @@ public class AccessUserStorageProvider implements UserStorageProvider,
 
 		List<UserModel> users = new LinkedList<>();
 		
-		UserFederationDAO dao = new UserFederationDAOImpl();
+		UserFederationDAO dao = new UserFederationDAOImpl(properties);
 		List<UserInfoVO> listUserInfoVO = dao.getAllUsers(firstResult, maxResults);
 		
 		//TypedQuery<UserInfoVO> query = em.createNamedQuery("getAllUsers", UserInfoVO.class);
@@ -430,7 +404,7 @@ public class AccessUserStorageProvider implements UserStorageProvider,
         logger.info("Dentro de AccessUser --Agrega usuario: " + username);
         
 		//UserInfoVO entity = new UserInfoVO();
-        UserFederationDAO dao = new UserFederationDAOImpl();
+        UserFederationDAO dao = new UserFederationDAOImpl(properties);
         UserInfoVO userinfo = dao.addUser("6", username,"gg@gmail.com","fran","dimitri","4321","abc");
 		
         //entity.setId(UUID.randomUUID().toString());
@@ -446,8 +420,8 @@ public class AccessUserStorageProvider implements UserStorageProvider,
 		logger.info("Dentro de AccessUser --Remove from user: " + user.getUsername());
         //String persistenceId = StorageId.externalId(user.getId());
         
-        UserFederationDAO dao = new UserFederationDAOImpl();
-        return dao.removeUser(user.getId());
+        UserFederationDAO dao = new UserFederationDAOImpl(properties);
+        return dao.removeUser(user.getUsername());
         
 		//Query query = em.createQuery("delete UserInfoVO WHERE userName='"+persistenceId+"'"); //query delete by username
 		//query.executeUpdate(); 
